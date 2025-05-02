@@ -47,16 +47,27 @@ VOut VS(VIn vIn)
 
 float4 PS(VOut pIn) : SV_TARGET
 {
-     float4 diffuseTex = DiffuseTexture.Sample(DefaultSampler, pIn.uv);
-
-     float3 n = normalize(pIn.normal);
-
-     //TODO change this from a half-lambert into a toon shader
-     float d = dot(n, c_lightDir);
-     d = 0.5f * d + 0.5f;
-     d = d * d;
-
-     float4 light = float4(d * c_lightColor, 1.0f);
-
-     return diffuseTex * light;
+    float4 diffuseTex = DiffuseTexture.Sample(DefaultSampler, pIn.uv);
+    float3 n = normalize(pIn.normal);
+    
+    // Calculate basic dot product for light intensity
+    float d = dot(n, c_lightDir);
+    
+    // Create stepped/banded lighting for toon effect
+    // Using 3 lighting bands plus shadow
+    float toonIntensity;
+    if (d < 0.0f)
+        toonIntensity = 0.1f; // Darkest shadow band
+    else if (d < 0.3f)
+        toonIntensity = 0.4f; // Medium shadow
+    else if (d < 0.6f)
+        toonIntensity = 0.7f; // Medium light
+    else
+        toonIntensity = 1.0f; // Brightest light
+    
+    // Create final light color with toon shading
+    float4 light = float4(toonIntensity * c_lightColor, 1.0f);
+    
+    
+    return diffuseTex * light;
 }
